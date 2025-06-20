@@ -1,0 +1,48 @@
+.freespace-popup-subtitle-menu-item {
+    color: inherit;
+}
+
+.freespace-mountpoint-popup-menu-item {
+    font-weight: bold;
+    color: inherit;
+}
+
+.progress-outer {
+    width: 200px;
+    height: 22px;
+    border-radius: 8px;
+}
+
+.progress-outer.light {
+    background-color: #e0e0e0;
+}
+
+.progress-outer.dark {
+    background-color: #3a3a3a;
+}
+
+.progress-inner {
+    height: 22px;
+    border-radius: 8px;
+}
+
+.progress-inner.light {
+    background-color: #1a73e8;
+}
+
+.progress-inner.dark {
+    background-color: #3584e4;
+}
+
+.progress-label {
+    font-size: 12px;
+    text-align: center;
+}
+
+.progress-label.light {
+    color: #000000;
+}
+
+.progress-label.dark {
+    color: #ffffff;
+}
