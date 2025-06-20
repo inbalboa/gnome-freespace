@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.freespace" path="/org/gnome/shell/extensions/freespace/">
+    <key name="main-mount-point" type="s">
+      <default>"/"</default>
+      <summary>Main mount point to display in panel</summary>
+      <description>The mount point that will be displayed in the top panel indicator</description>
+    </key>
+    <key name="hidden-mount-points" type="as">
+      <default>[]</default>
+      <summary>List of hidden mount points</summary>
+      <description>Mount points that should be hidden from the popup menu</description>
+    </key>
+    <key name="refresh-interval" type="i">
+      <default>60</default>
+      <summary>Refresh interval in seconds</summary>
+      <description>How often to update disk space information</description>
+    </key>
+    <key name="use-binary-units" type="b">
+      <default>false</default>
+      <summary>Use binary units (1024-based)</summary>
+      <description>If true, use binary units (KiB, MiB, GiB). If false, use decimal units (KB, MB, GB)</description>
+    </key>
+    <key name="indicator-display-mode" type="s">
+      <default>"both"</default>
+      <summary>Indicator display mode</summary>
+      <description>How to display the indicator: "icon" (only icon), "label" (only label), or "both" (icon and label)</description>
+    </key>
+  </schema>
+</schemalist> 
