@@ -3,14 +3,14 @@ import Adw from 'gi://Adw';
 import GObject from 'gi://GObject';
 import GLib from 'gi://GLib';
 
+import * as Config from 'resource:///org/gnome/Shell/Extensions/js/misc/config.js';
 import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-const FreeSpacePrefsWidget = GObject.registerClass(
-class FreeSpacePrefsWidget extends Adw.PreferencesPage {
+const FreeSpacePrefsWidget = GObject.registerClass(class FreeSpacePrefsWidget extends Adw.PreferencesPage {
     _init(settings) {
         super._init({
-            title: _('Free Space Preferences'),
-            icon_name: 'drive-harddisk-symbolic',
+            title: _('Settings'),
+            icon_name: 'settings-symbolic',
         });
 
         this._settings = settings;
@@ -213,9 +213,114 @@ export default class FreeSpacePreferences extends ExtensionPreferences {
         window.set_default_size(600, 650);
         window.set_size_request(500, 550);
 
-        const page = new FreeSpacePrefsWidget(this.getSettings());
-        window.add(page);
+        const prefsPage = new FreeSpacePrefsWidget(this.getSettings());
+        window.add(prefsPage);
+
+        const aboutPage = new FreeSpaceAboutPage(this.metadata);
+        window.add(aboutPage);
     }
 }
 
+
+export const FreeSpaceAboutPage = GObject.registerClass(class FreeSpaceAboutPage extends Adw.PreferencesPage {
+    _init(metadata) {
+        super._init({
+            title: _('About'),
+            icon_name: 'help-about-symbolic',
+        });
+
+        const EXTERNAL_LINK_ICON = 'adw-external-link-symbolic';
+
+        const freespaceGroup = new Adw.PreferencesGroup();
+        const freespaceBox = new Gtk.Box({
+            orientation: Gtk.Orientation.VERTICAL,
+            margin_top: 10,
+            margin_bottom: 10,
+            hexpand: false,
+            vexpand: false,
+        });
+
+        const freespaceLabel = new Gtk.Label({
+            label: `<span size="large"><b>${_('FreeSpace')}</b></span>`,
+            use_markup: true,
+            vexpand: true,
+            valign: Gtk.Align.FILL,
+        });
+
+        const projectDescriptionLabel = new Gtk.Label({
+            label: _('Displays disk free space information'),
+            hexpand: false,
+            vexpand: false,
+            margin_bottom: 5,
+        });
+
+        freespaceBox.append(freespaceLabel);
+        freespaceBox.append(projectDescriptionLabel);
+        freespaceGroup.add(freespaceBox);
+
+        this.add(freespaceGroup);
+        // -----------------------------------------------------------------------
+
+        // Extension/OS Info Group------------------------------------------------
+        const extensionInfoGroup = new Adw.PreferencesGroup();
+        const freespaceVersionRow = new Adw.ActionRow({
+            title: _('FreeSpace Version'),
+        });
+        const releaseVersion = metadata['version-name'] ? metadata['version-name'] : 'unknown';
+        freespaceVersionRow.add_suffix(new Gtk.Label({
+            label: `${releaseVersion}`,
+        }));
+
+        const gnomeVersionRow = new Adw.ActionRow({
+            title: _('GNOME Version'),
+        });
+        gnomeVersionRow.add_suffix(new Gtk.Label({
+            label: `${Config.PACKAGE_VERSION.toString()}`,
+        }));
+
+        const createdByRow = new Adw.ActionRow({
+            title: _('Made with ❤️ for the GNOME community by'),
+        });
+        createdByRow.add_suffix(new Gtk.Label({
+            label: 'Serhiy Shliapuhin',
+        }));
+
+        const githubLinkRow = new Adw.ActionRow({
+            title: 'GitHub',
+        });
+        githubLinkRow.add_suffix(new Gtk.LinkButton({
+            icon_name: EXTERNAL_LINK_ICON,
+            uri: 'https://github.com/inbalboa/gnome-freespace',
+        }));
+
+        extensionInfoGroup.add(freespaceVersionRow);
+        extensionInfoGroup.add(gnomeVersionRow);
+        extensionInfoGroup.add(createdByRow);
+        extensionInfoGroup.add(githubLinkRow);
+
+        this.add(extensionInfoGroup);
+        // -----------------------------------------------------------------------
+
+        const licenseLabel = _('This project is licensed under the GPL-3.0 License.');
+        const urlLabel = _('See the %sLicense%s for details.').format('<a href="https://www.gnu.org/licenses/gpl.txt">', '</a>');
+
+        const gnuSoftwareGroup = new Adw.PreferencesGroup();
+        const gnuSofwareLabel = new Gtk.Label({
+            label: `<span size="small">${licenseLabel}\n${urlLabel}</span>`,
+            use_markup: true,
+            justify: Gtk.Justification.CENTER,
+        });
+
+        const gnuSofwareLabelBox = new Gtk.Box({
+            orientation: Gtk.Orientation.VERTICAL,
+            valign: Gtk.Align.END,
+            vexpand: true,
+            margin_top: 5,
+            margin_bottom: 10,
+        });
+        gnuSofwareLabelBox.append(gnuSofwareLabel);
+        gnuSoftwareGroup.add(gnuSofwareLabelBox);
+        this.add(gnuSoftwareGroup);
+    }
+});
 
