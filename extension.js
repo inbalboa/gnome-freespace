@@ -248,11 +248,17 @@ class FreeSpaceIndicator extends PanelMenu.Button {
             text: `${usedFmt} / ${totalFmt}`,
             style_class: `progress-label ${themeStyle}`,
         });
-
         progressOuter.add_child(progressLabel);
 
         progressItem.actor.add_child(progressOuter);
-        progressInner.width = Math.round(progressOuter.width * used / total);
+
+        // set progress width after the widget is mapped and has proper dimensions
+        progressOuter.connect('notify::mapped', () => {
+            if (progressOuter.mapped && progressOuter.width > 0) {
+                const progressWidth = Math.round(progressOuter.width * used / total);
+                progressInner.width = Math.max(1, progressWidth);
+            }
+        });
 
         return progressItem;
     }
