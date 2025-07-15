@@ -185,7 +185,7 @@ const FreeSpacePrefsWidget = GObject.registerClass(class FreeSpacePrefsWidget ex
             child = next;
         }
 
-        let hiddenMountPoints = this._settings.get_strv('hidden-mount-points');
+        const hiddenMountPoints = this._settings.get_strv('hidden-mount-points');
 
         this._mountPoints.forEach(mp => {
             const checkbox = new Gtk.CheckButton({

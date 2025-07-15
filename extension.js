@@ -1,8 +1,8 @@
+import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import St from 'gi://St';
-import GLib from 'gi://GLib';
-import Clutter from 'gi://Clutter';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
@@ -106,7 +106,6 @@ class FreeSpaceIndicator extends PanelMenu.Button {
         case 'label':
             this._hbox.add_child(this._label);
             break;
-        case 'both':
         default:
             this._hbox.add_child(this._icon);
             this._hbox.add_child(this._label);
@@ -123,7 +122,7 @@ class FreeSpaceIndicator extends PanelMenu.Button {
         const i = Math.floor(Math.log(bytes) / Math.log(k));
 
         const sizeFmt = condensed ? `${sizes[i]}` : ` ${sizes[i]}B`;
-        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))}${sizeFmt}`;
+        return `${parseFloat((bytes / k ** i).toFixed(1))}${sizeFmt}`;
     }
 
     _getAllDisksInfo() {
@@ -135,6 +134,7 @@ class FreeSpaceIndicator extends PanelMenu.Button {
                 path: mp,
                 total: diskInfo.total,
                 free: diskInfo.free,
+                used: diskInfo.used,
             };
         });
     }
@@ -160,6 +160,7 @@ class FreeSpaceIndicator extends PanelMenu.Button {
             return {
                 total: info.get_attribute_uint64('filesystem::size'),
                 free: info.get_attribute_uint64('filesystem::free'),
+                used: info.get_attribute_uint64('filesystem::used'),
             };
         } catch (e) {
             console.error('Error getting disk space:', e);
@@ -202,17 +203,58 @@ class FreeSpaceIndicator extends PanelMenu.Button {
             });
             this._layoutSection.addMenuItem(pathItem);
 
-            const freeFmt = this._formatBytes(mp.free, this._useBinaryUnits, false);
+            const usedFmt = this._formatBytes(mp.used, this._useBinaryUnits, false);
             const totalFmt = this._formatBytes(mp.total, this._useBinaryUnits, false);
-            const itemInfo = new PopupMenu.PopupMenuItem(`Free ${freeFmt} of ${totalFmt}`, {
-                reactive: false,
-                style_class: 'freespace-freeinfo-popup-menu-item',
+
+            // progress bar
+            const progressValue = Math.round(100 * mp.used / mp.total);
+            const progressItem = new PopupMenu.PopupBaseMenuItem({ reactive: false });
+            const progressOuter = new St.Widget({
+                style_class: 'progress-outer',
+                layout_manager: new Clutter.BinLayout(),  // allows overlay
+                x_expand: true,
+                y_expand: true,
             });
-            this._layoutSection.addMenuItem(itemInfo);
+            const progressInner = new St.Widget({
+                style_class: 'progress-inner',
+                x_align: Clutter.ActorAlign.START,
+                y_align: Clutter.ActorAlign.CENTER,
+                x_expand: true,
+            });
+            progressOuter.add_child(progressInner);
+            const progressLabel = new St.Label({
+                text: `${usedFmt} / ${totalFmt}`,
+                style_class: 'progress-label',
+            });
+            if (this._isDarkTheme()) {
+                progressOuter.remove_style_class_name('light');
+                progressInner.remove_style_class_name('light');
+                progressLabel.remove_style_class_name('light');
+                progressOuter.add_style_class_name('dark');
+                progressInner.add_style_class_name('dark');
+                progressLabel.add_style_class_name('dark');
+            } else {
+                progressOuter.remove_style_class_name('dark');
+                progressInner.remove_style_class_name('dark');
+                progressLabel.remove_style_class_name('dark');
+                progressOuter.add_style_class_name('light');
+                progressInner.add_style_class_name('light');
+                progressLabel.add_style_class_name('light');
+            }
+            progressOuter.add_child(progressLabel);
+            progressItem.actor.add_child(progressOuter);
+            progressInner.width = Math.round(progressOuter.width * progressValue / 100);
+            this._layoutSection.addMenuItem(progressItem);
 
             if (i < (mpa.length - 1))
                 this._layoutSection.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         });
+    }
+
+    _isDarkTheme() {
+        const settings = new Gio.Settings({schema: 'org.gnome.desktop.interface'});
+        const colorScheme = settings.get_string('color-scheme');
+        return colorScheme.includes('dark');
     }
 
     _startMonitoring() {
@@ -253,3 +295,4 @@ export default class FreeSpaceExtension extends Extension {
         this._settings = null;
     }
 }
+
