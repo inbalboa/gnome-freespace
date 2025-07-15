@@ -187,10 +187,11 @@ class FreeSpaceIndicator extends PanelMenu.Button {
 
         for (const [i, di] of newVisibleDisksInfo.entries()) {
             const exDi = this._visibleDisksInfo[i];
-            if (Math.trunc(exDi.path / 1000000) !== Math.trunc(di.path/ 1000000)
-                    || Math.trunc(exDi.total / 1000000) !== Math.trunc(di.total / 1000000)
-                    || Math.trunc(exDi.free / 1000000) !== Math.trunc(di.free / 1000000)
-                    || Math.trunc(exDi.used / 1000000) !== Math.trunc(di.used / 1000000)) {
+            const changeQuantum = 100000000;
+            if (exDi.path !== di.path
+                    || Math.trunc(exDi.total / changeQuantum) !== Math.trunc(di.total / changeQuantum)
+                    || Math.trunc(exDi.free / changeQuantum) !== Math.trunc(di.free / changeQuantum)
+                    || Math.trunc(exDi.used / changeQuantum) !== Math.trunc(di.used / changeQuantum)) {
                 this._visibleDisksInfo = newVisibleDisksInfo;
                 return true;
             }
@@ -199,7 +200,6 @@ class FreeSpaceIndicator extends PanelMenu.Button {
     }
 
     _updateMainTitle() {
-        console.log('Updating title...');
         let mainDisk = this._visibleDisksInfo.find(di => di.path === this._mainMountPoint);
         if (!mainDisk && this._visibleDisksInfo.length > 0)
             mainDisk = this._visibleDisksInfo[0];
@@ -211,7 +211,6 @@ class FreeSpaceIndicator extends PanelMenu.Button {
     }
 
     _updateMenu() {
-        console.log('Updating menu...');
         this._layoutSection.removeAll();
 
         this._visibleDisksInfo.forEach((mp, i, mpa) => {
