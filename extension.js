@@ -16,10 +16,9 @@ class FreeSpaceIndicator extends PanelMenu.Button {
         super._init(0.0, _('Free Space'));
 
         this._settings = settings;
-        this._disksInfo = this._getAllDisksInfo();
         this._timeoutId = null;
 
-        // Create the panel container
+        // create the panel container
         this._hbox = new St.BoxLayout({
             style_class: 'panel-status-menu-box',
         });
@@ -36,20 +35,22 @@ class FreeSpaceIndicator extends PanelMenu.Button {
         // initial setting filling
         this._fillSettings();
 
-        // Set initial display mode
+        // initial fill of disk info
+        this._refillVisibleDisksInfo(true);
+
+        // set initial display mode
         this._updateIndicatorDisplay();
 
-        // Create popup menu
+        // create popup menu
         this._createMenu();
 
         this._updateMainTitle();
         this._updateMenu();
 
-
-        // Connect settings changes
+        // connect settings changes
         this._settings.connect('changed', this._onSettingsChanged.bind(this));
 
-        // Start monitoring
+        // start monitoring
         this._startMonitoring();
     }
 
@@ -70,7 +71,7 @@ class FreeSpaceIndicator extends PanelMenu.Button {
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         const refreshItem = new PopupMenu.PopupMenuItem(_('Refresh'));
         refreshItem.connect('activate', () => {
-            this._disksInfo = this._getAllDisksInfo();
+            this._refillVisibleDisksInfo(true);
             this._updateMainTitle();
             this._updateMenu();
         });
@@ -95,10 +96,8 @@ class FreeSpaceIndicator extends PanelMenu.Button {
     }
 
     _updateIndicatorDisplay() {
-        // Clear current children
         this._hbox.remove_all_children();
 
-        // Add children based on display mode
         switch (this._displayMode) {
         case 'icon':
             this._hbox.add_child(this._icon);
@@ -168,23 +167,9 @@ class FreeSpaceIndicator extends PanelMenu.Button {
         }
     }
 
-    _updateMainTitle() {
-        const visibleDisksInfo = this._disksInfo.filter(di => !this._hiddenMountPoints.includes(di.path));
-        let mainDisk = visibleDisksInfo.find(di => di.path === this._mainMountPoint);
-        if (!mainDisk && visibleDisksInfo.length > 0)
-            mainDisk = visibleDisksInfo[0];
-
-        if (mainDisk)
-            this._label.text = this._formatBytes(mainDisk.free, this._useBinaryUnits, true);
-        else
-            this._label.text = _('No disks');
-    }
-
-    _updateMenu() {
-        this._layoutSection.removeAll();
-
-        // Filter out hidden mount points and make main point first
-        const visibleDisksInfo = this._disksInfo
+    _refillVisibleDisksInfo(force = false) {
+        const disksInfo = this._getAllDisksInfo();
+        const newVisibleDisksInfo = disksInfo
             .filter(di => !this._hiddenMountPoints.includes(di.path))
             .sort((x, y) => {
                 const isXMain = x.path === this._mainMountPoint;
@@ -195,60 +180,85 @@ class FreeSpaceIndicator extends PanelMenu.Button {
                     return isXMain ? -1 : 1;
             });
 
-        // Add menu items for each visible mount point
-        visibleDisksInfo.forEach((mp, i, mpa) => {
-            const pathItem = new PopupMenu.PopupMenuItem(`Mounted on ${mp.path}`, {
+        if (force || !this._visibleDisksInfo || this._visibleDisksInfo.length !== newVisibleDisksInfo.length) {
+            this._visibleDisksInfo = newVisibleDisksInfo;
+            return true;
+        }
+
+        for (const [i, di] of newVisibleDisksInfo.entries()) {
+            const exDi = this._visibleDisksInfo[i];
+            if (Math.trunc(exDi.path / 1000000) !== Math.trunc(di.path/ 1000000)
+                    || Math.trunc(exDi.total / 1000000) !== Math.trunc(di.total / 1000000)
+                    || Math.trunc(exDi.free / 1000000) !== Math.trunc(di.free / 1000000)
+                    || Math.trunc(exDi.used / 1000000) !== Math.trunc(di.used / 1000000)) {
+                this._visibleDisksInfo = newVisibleDisksInfo;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    _updateMainTitle() {
+        console.log('Updating title...');
+        let mainDisk = this._visibleDisksInfo.find(di => di.path === this._mainMountPoint);
+        if (!mainDisk && this._visibleDisksInfo.length > 0)
+            mainDisk = this._visibleDisksInfo[0];
+
+        if (mainDisk)
+            this._label.text = this._formatBytes(mainDisk.free, this._useBinaryUnits, true);
+        else
+            this._label.text = _('No disks');
+    }
+
+    _updateMenu() {
+        console.log('Updating menu...');
+        this._layoutSection.removeAll();
+
+        this._visibleDisksInfo.forEach((mp, i, mpa) => {
+            this._layoutSection.addMenuItem(new PopupMenu.PopupMenuItem(`Mounted on ${mp.path}`, {
                 reactive: false,
                 style_class: 'freespace-mountpoint-popup-menu-item',
-            });
-            this._layoutSection.addMenuItem(pathItem);
-
-            const usedFmt = this._formatBytes(mp.used, this._useBinaryUnits, false);
-            const totalFmt = this._formatBytes(mp.total, this._useBinaryUnits, false);
-
-            // progress bar
-            const progressValue = Math.round(100 * mp.used / mp.total);
-            const progressItem = new PopupMenu.PopupBaseMenuItem({ reactive: false });
-            const progressOuter = new St.Widget({
-                style_class: 'progress-outer',
-                layout_manager: new Clutter.BinLayout(),  // allows overlay
-                x_expand: true,
-                y_expand: true,
-            });
-            const progressInner = new St.Widget({
-                style_class: 'progress-inner',
-                x_align: Clutter.ActorAlign.START,
-                y_align: Clutter.ActorAlign.CENTER,
-                x_expand: true,
-            });
-            progressOuter.add_child(progressInner);
-            const progressLabel = new St.Label({
-                text: `${usedFmt} / ${totalFmt}`,
-                style_class: 'progress-label',
-            });
-            if (this._isDarkTheme()) {
-                progressOuter.remove_style_class_name('light');
-                progressInner.remove_style_class_name('light');
-                progressLabel.remove_style_class_name('light');
-                progressOuter.add_style_class_name('dark');
-                progressInner.add_style_class_name('dark');
-                progressLabel.add_style_class_name('dark');
-            } else {
-                progressOuter.remove_style_class_name('dark');
-                progressInner.remove_style_class_name('dark');
-                progressLabel.remove_style_class_name('dark');
-                progressOuter.add_style_class_name('light');
-                progressInner.add_style_class_name('light');
-                progressLabel.add_style_class_name('light');
-            }
-            progressOuter.add_child(progressLabel);
-            progressItem.actor.add_child(progressOuter);
-            progressInner.width = Math.round(progressOuter.width * progressValue / 100);
-            this._layoutSection.addMenuItem(progressItem);
+            }));
+            this._layoutSection.addMenuItem(this._makeProgressItem(mp.used, mp.total));
 
             if (i < (mpa.length - 1))
                 this._layoutSection.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         });
+    }
+
+    _makeProgressItem(used, total) {
+        const progressItem = new PopupMenu.PopupBaseMenuItem({ reactive: false });
+
+        const themeStyle = this._isDarkTheme() ? 'dark' : 'light';
+
+        const progressOuter = new St.Widget({
+            style_class: `progress-outer ${themeStyle}`,
+            layout_manager: new Clutter.BinLayout(),  // allows overlay
+            x_expand: true,
+            y_expand: true,
+        });
+
+        const progressInner = new St.Widget({
+            style_class: `progress-inner ${themeStyle}`,
+            x_align: Clutter.ActorAlign.START,
+            y_align: Clutter.ActorAlign.CENTER,
+            x_expand: true,
+        });
+        progressOuter.add_child(progressInner);
+
+        const usedFmt = this._formatBytes(used, this._useBinaryUnits, false);
+        const totalFmt = this._formatBytes(total, this._useBinaryUnits, false);
+        const progressLabel = new St.Label({
+            text: `${usedFmt} / ${totalFmt}`,
+            style_class: `progress-label ${themeStyle}`,
+        });
+
+        progressOuter.add_child(progressLabel);
+
+        progressItem.actor.add_child(progressOuter);
+        progressInner.width = Math.round(progressOuter.width * used / total);
+
+        return progressItem;
     }
 
     _isDarkTheme() {
@@ -258,11 +268,11 @@ class FreeSpaceIndicator extends PanelMenu.Button {
     }
 
     _startMonitoring() {
-        // update at the specified interval
         this._timeoutId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, this._refreshInterval, () => {
-            this._disksInfo = this._getAllDisksInfo();
-            this._updateMainTitle();
-            this._updateMenu();
+            if (this._refillVisibleDisksInfo()) {
+                this._updateMainTitle();
+                this._updateMenu();
+            }
             return GLib.SOURCE_CONTINUE;
         });
     }
