@@ -188,10 +188,7 @@ class FreeSpaceIndicator extends PanelMenu.Button {
         for (const [i, di] of newVisibleDisksInfo.entries()) {
             const exDi = this._visibleDisksInfo[i];
             const changeThreshold = 100000000;
-            if (exDi.path !== di.path
-                    || Math.abs(exDi.used - di.used) > changeThreshold
-                    || Math.abs(exDi.free - di.free) > changeThreshold
-                    || Math.abs(exDi.total - di.total) > changeThreshold) {
+            if (exDi.path !== di.path || Math.abs(exDi.used - di.used) > changeThreshold) {
                 this._visibleDisksInfo = newVisibleDisksInfo;
                 return true;
             }
