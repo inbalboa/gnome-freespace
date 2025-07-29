@@ -16,6 +16,7 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
 
         this._settings = settings;
         this._timeoutId = null;
+        this._visibleDisksInfo = [];
 
         // create the panel container
         this._hbox = new St.BoxLayout({
@@ -35,16 +36,23 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
         this._fillSettings();
 
         // initial fill of disk info
-        this._refillVisibleDisksInfo(true);
+        this._refillVisibleDisksInfo(true).then(() => {
+            this._updateIndicatorDisplay();
+            this._updateMainTitle();
+            this._updateMenu();
+        }).catch(e => {
+            console.error('Error initializing disk info:', e);
+            this._visibleDisksInfo = [];
+            this._updateIndicatorDisplay();
+            this._updateMainTitle();
+            this._updateMenu();
+        });
 
         // set initial display mode
         this._updateIndicatorDisplay();
 
         // create popup menu
         this._createMenu();
-
-        this._updateMainTitle();
-        this._updateMenu();
 
         // connect settings changes
         this._settings.connect('changed', this._onSettingsChanged.bind(this));
@@ -69,10 +77,14 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
         // refresh button
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         const refreshItem = new PopupMenu.PopupMenuItem(_('Refresh'));
-        refreshItem.connect('activate', () => {
-            this._refillVisibleDisksInfo(true);
-            this._updateMainTitle();
-            this._updateMenu();
+        refreshItem.connect('activate', async () => {
+            try {
+                await this._refillVisibleDisksInfo(true);
+                this._updateMainTitle();
+                this._updateMenu();
+            } catch (e) {
+                console.error('Error refreshing disk info:', e);
+            }
         });
         this.menu.addMenuItem(refreshItem);
     }
@@ -86,11 +98,16 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
     }
 
     _onSettingsChanged() {
-        this._stopMonitoring();
         this._fillSettings();
         this._updateIndicatorDisplay();
-        this._updateMainTitle();
-        this._updateMenu();
+        this._refillVisibleDisksInfo().then(() => {
+            this._updateMainTitle();
+            this._updateMenu();
+        }).catch(e => {
+            console.error('Error refreshing disk info on settings change:', e);
+            this._updateMainTitle();
+            this._updateMenu();
+        });
         this._startMonitoring();
     }
 
@@ -123,8 +140,9 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
         return `${parseFloat((bytes / k ** i).toFixed(1))}${sizeFmt}`;
     }
 
-    _getAllDisksInfo() {
-        return this._getMountPoints().map(mountData => {
+    async _getAllDisksInfo() {
+        const mountPoints = await this._getMountPoints();
+        return mountPoints.map(mountData => {
             const diskInfo = this._getDiskInfo(mountData.path);
             if (!diskInfo)
                 return {};
@@ -138,37 +156,73 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
         });
     }
 
-    _getMountPoints() {
+    async _getMountPoints() {
         try {
-            const [success, stdout] = GLib.spawn_command_line_sync('findmnt --fstab --json --types=swap --invert --output=SOURCE,TARGET');
-            if (!success)
-                return [];
-
-            const mountData = JSON.parse(new TextDecoder().decode(stdout));
-            return mountData.filesystems.map(md => ({
-                path: md.target,
-                device: this._getMountPointSourceDevice(md.target) || md.source
-            }));
+            const proc = new Gio.Subprocess({
+                argv: ['findmnt', '--fstab', '--json', '--types=swap', '--invert', '--output=SOURCE,TARGET'],
+                flags: Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE,
+            });
+            proc.init(null);
+            
+            const stdout = await new Promise((resolve, reject) => {
+                proc.communicate_utf8_async(null, null, (proc, result) => {
+                    try {
+                        const [, stdout] = proc.communicate_utf8_finish(result);
+                        if (!proc.get_successful()) {
+                            reject(new Error(`Process failed with exit code ${proc.get_exit_status()}`));
+                            return;
+                        }
+                        resolve(stdout);
+                    } catch (e) {
+                        reject(e);
+                    }
+                });
+            });
+            const mountData = JSON.parse(stdout.trim());
+            const mountPoints = [];
+            for (const md of mountData.filesystems) {
+                const device = await this._getMountPointSourceDevice(md.target) || md.source;
+                mountPoints.push({
+                    path: md.target,
+                    device: device
+                });
+            }
+            return mountPoints;
         } catch (e) {
             console.error('Error getting mount points:', e);
             return [];
         }
     }
 
-    _getMountPointSourceDevice(mountPath) {
+    async _getMountPointSourceDevice(mountPath) {
         try {
-            const [success, stdout] = GLib.spawn_command_line_sync(`findmnt --json --output=SOURCE -- ${mountPath}`);
-            if (!success)
-                return null;
-
-            const mountData = JSON.parse(new TextDecoder().decode(stdout));
+            const proc = new Gio.Subprocess({
+                argv: ['findmnt', '--json', '--output=SOURCE', '--', mountPath],
+                flags: Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE,
+            });
+            proc.init(null);
+            
+            const stdout = await new Promise((resolve, reject) => {
+                proc.communicate_utf8_async(null, null, (proc, result) => {
+                    try {
+                        const [, stdout] = proc.communicate_utf8_finish(result);
+                        if (!proc.get_successful()) {
+                            reject(new Error(`Process failed with exit code ${proc.get_exit_status()}`));
+                            return;
+                        }
+                        resolve(stdout);
+                    } catch (e) {
+                        reject(e);
+                    }
+                });
+            });
+            const mountData = JSON.parse(stdout.trim());
             if (mountData.filesystems.length > 0)
-                return mountData.filesystems[0].source
+                return mountData.filesystems[0].source;
         } catch (e) {
             console.error('Error getting mount point source device:', e);
             return null;
         }
-
     }
 
     _getDiskInfo(mountPoint) {
@@ -186,8 +240,8 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
         }
     }
 
-    _refillVisibleDisksInfo(force = false) {
-        const disksInfo = this._getAllDisksInfo();
+    async _refillVisibleDisksInfo(force = false) {
+        const disksInfo = await this._getAllDisksInfo();
         const newVisibleDisksInfo = disksInfo
             .filter(di => !this._hiddenMountPoints.includes(di.path))
             .sort((x, y) => {
@@ -216,6 +270,11 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
     }
 
     _updateMainTitle() {
+        if (!this._visibleDisksInfo || !Array.isArray(this._visibleDisksInfo)) {
+            this._label.text = _('Loading...');
+            return;
+        }
+
         let mainDisk = this._visibleDisksInfo.find(di => di.path === this._mainMountPoint);
         if (!mainDisk && this._visibleDisksInfo.length > 0)
             mainDisk = this._visibleDisksInfo[0];
@@ -228,6 +287,10 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
 
     _updateMenu() {
         this._layoutSection.removeAll();
+
+        if (!this._visibleDisksInfo || !Array.isArray(this._visibleDisksInfo)) {
+            return;
+        }
 
         this._visibleDisksInfo.forEach((mp, i, mpa) => {
             const menuItem = new PopupMenu.PopupMenuItem('', {
@@ -292,11 +355,14 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
     }
 
     _startMonitoring() {
+        this._stopMonitoring();
         this._timeoutId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, this._refreshInterval, () => {
-            if (this._refillVisibleDisksInfo()) {
-                this._updateMainTitle();
-                this._updateMenu();
-            }
+            this._refillVisibleDisksInfo().then(changed => {
+                if (changed) {
+                    this._updateMainTitle();
+                    this._updateMenu();
+                }
+            }).catch(e => console.error('Error during monitoring refresh:', e));
             return GLib.SOURCE_CONTINUE;
         });
     }
