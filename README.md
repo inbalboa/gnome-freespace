@@ -1,4 +1,5 @@
 # Free Space Indicator — GNOME Shell Extension
+[<img src="https://raw.githubusercontent.com/andyholmes/gnome-shell-extensions-badge/master/get-it-on-ego.svg?sanitize=true" height="100">](https://extensions.gnome.org/extension/8383/free-space-indicator/)
 
 [![GNOME Shell](https://img.shields.io/badge/GNOME%20Shell-48+-blue.svg)](https://gitlab.gnome.org/GNOME/gnome-shell)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
@@ -25,6 +26,10 @@ A GNOME Shell extension that displays disk free space information in the top pan
 
 ## Installation
 
+### From GNOME Extensions
+
+https://extensions.gnome.org/extension/8277/screen-brightness-governor/
+
 ### Manual Installation
 
 1. **Download and install the extension files**
@@ -34,6 +39,7 @@ A GNOME Shell extension that displays disk free space information in the top pan
    cd gnome-freespace
    make install
    ```
+   Requires `git`, `make`, `jq`
 
 2. **Restart GNOME Shell**
 
