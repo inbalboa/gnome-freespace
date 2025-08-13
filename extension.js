@@ -201,7 +201,7 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
                 flags: Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE,
             });
             proc.init(null);
-            
+
             const stdout = await new Promise((resolve, reject) => {
                 proc.communicate_utf8_async(null, null, (proc, result) => {
                     try {
@@ -337,10 +337,10 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
 
         progressItem.actor.add_child(progressOuter);
 
-        // set progress width after the widget is mapped and has proper dimensions
-        progressOuter.connect('notify::mapped', () => {
-            if (progressOuter.mapped && progressOuter.width > 0) {
-                const progressWidth = Math.round(progressOuter.width * used / total);
+        progressOuter.connect('notify::allocation', () => {
+            if (progressOuter.mapped && progressOuter.get_allocation_box().get_width() > 0) {
+                const outerWidth = progressOuter.get_allocation_box().get_width();
+                const progressWidth = Math.round(outerWidth * used / total);
                 progressInner.width = Math.max(1, progressWidth);
             }
         });
