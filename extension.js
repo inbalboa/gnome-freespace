@@ -63,30 +63,56 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
 
     _createMenu() {
         // header
-        const headerItem = new PopupMenu.PopupMenuItem(_('Disk Space Usage'), {
+        const headerItem = new PopupMenu.PopupBaseMenuItem({
             reactive: false,
             can_focus: false,
             style_class: 'freespace-popup-subtitle-menu-item',
         });
+
+        const headerBox = new St.BoxLayout({
+            vertical: false,
+            x_expand: true,
+        });
+
+        const titleLabel = new St.Label({
+            text: _('Disk Space Usage'),
+            style_class: 'freespace-popup-subtitle-menu-item',
+            y_align: Clutter.ActorAlign.CENTER,
+            x_expand: true,
+        });
+
+        // refresh button
+        const refreshButton = new St.Button({
+            style_class: 'freespace-refresh-button',
+            child: new St.Icon({
+                icon_name: 'view-refresh-symbolic',
+                style_class: 'popup-menu-icon',
+            }),
+            x_align: Clutter.ActorAlign.END,
+        });
+
+        refreshButton.connect('clicked', async () => { this._fullRefresh() });
+
+        headerBox.add_child(titleLabel);
+        headerBox.add_child(refreshButton);
+        headerItem.add_child(headerBox);
+
         this.menu.addMenuItem(headerItem);
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
         this._layoutSection = new PopupMenu.PopupMenuSection();
         this.menu.addMenuItem(this._layoutSection);
+    }
 
-        // refresh button
-        this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-        const refreshItem = new PopupMenu.PopupMenuItem(_('Refresh'));
-        refreshItem.connect('activate', async () => {
-            try {
-                await this._refillVisibleDisksInfo(true);
-                this._updateMainTitle();
-                this._updateMenu();
-            } catch (e) {
-                console.error('Error refreshing disk info:', e);
-            }
-        });
-        this.menu.addMenuItem(refreshItem);
+    async _fullRefresh() {
+        try {
+            await this._refillVisibleDisksInfo(true);
+            this._updateMainTitle();
+            this._updateMenu();
+        } catch (e) {
+            console.error('Error refreshing disk info:', e);
+            throw e;
+        }
     }
 
     _fillSettings() {
@@ -163,7 +189,7 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
                 flags: Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE,
             });
             proc.init(null);
-            
+
             const stdout = await new Promise((resolve, reject) => {
                 proc.communicate_utf8_async(null, null, (proc, result) => {
                     try {
@@ -310,16 +336,14 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
     _makeProgressItem(used, total) {
         const progressItem = new PopupMenu.PopupBaseMenuItem({ reactive: false });
 
-        const themeStyle = this._isDarkTheme() ? 'dark' : 'light';
-
         const progressOuter = new St.Widget({
-            style_class: `progress-outer ${themeStyle}`,
+            style_class: 'freespace-progress-outer',
             x_expand: true,
             y_expand: true,
         });
 
         const progressInner = new St.Widget({
-            style_class: `progress-inner ${themeStyle}`,
+            style_class: 'freespace-progress-inner',
             x_align: Clutter.ActorAlign.START,
             y_align: Clutter.ActorAlign.CENTER,
         });
@@ -329,7 +353,7 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
         const totalFmt = this._formatBytes(total, this._useBinaryUnits, false);
         const progressLabel = new St.Label({
             text: `${usedFmt} / ${totalFmt}`,
-            style_class: `progress-label ${themeStyle}`,
+            style_class: 'freespace-progress-label',
         });
         const labelBin = new St.Bin({
             child: progressLabel,
@@ -359,12 +383,6 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
         });
 
         return progressItem;
-    }
-
-    _isDarkTheme() {
-        const settings = new Gio.Settings({schema: 'org.gnome.desktop.interface'});
-        const colorScheme = settings.get_string('color-scheme');
-        return colorScheme.includes('dark');
     }
 
     _startMonitoring() {

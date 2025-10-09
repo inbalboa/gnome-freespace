@@ -1,0 +1,51 @@
+.freespace-popup-subtitle-menu-item {
+    color: inherit;
+}
+
+.freespace-mountpoint-popup-menu-item {
+    font-weight: bold;
+    color: inherit;
+}
+
+.freespace-progress-outer {
+    width: 200px;
+    height: 22px;
+    border-radius: 8px;
+}
+
+.freespace-progress-outer {
+    background-color: #e0e0e0;
+}
+
+.freespace-progress-inner {
+    height: 22px;
+    border-radius: 8px;
+}
+
+.freespace-progress-inner {
+    background-color: #1a73e8;
+}
+
+.freespace-progress-label {
+    font-size: 12px;
+}
+
+.freespace-progress-label {
+    color: #000000;
+}
+
+.freespace-refresh-button {
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.1s ease;
+}
+
+.freespace-refresh-button:hover {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+.freespace-refresh-button:active {
+    background-color: rgba(0, 0, 0, 0.15);
+    transform: scale(0.9);
+}
+
