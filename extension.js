@@ -314,7 +314,6 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
 
         const progressOuter = new St.Widget({
             style_class: `progress-outer ${themeStyle}`,
-            layout_manager: new Clutter.BinLayout(),  // allows overlay
             x_expand: true,
             y_expand: true,
         });
@@ -323,7 +322,6 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
             style_class: `progress-inner ${themeStyle}`,
             x_align: Clutter.ActorAlign.START,
             y_align: Clutter.ActorAlign.CENTER,
-            x_expand: true,
         });
         progressOuter.add_child(progressInner);
 
@@ -333,15 +331,30 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
             text: `${usedFmt} / ${totalFmt}`,
             style_class: `progress-label ${themeStyle}`,
         });
-        progressOuter.add_child(progressLabel);
+        const labelBin = new St.Bin({
+            child: progressLabel,
+            x_align: Clutter.ActorAlign.CENTER,
+            y_align: Clutter.ActorAlign.CENTER,
+        });
+        progressOuter.add_child(labelBin);
 
-        progressItem.actor.add_child(progressOuter);
+        const progressBox = new St.BoxLayout({
+            vertical: false,
+            x_expand: true,
+            y_expand: true,
+        });
+        progressBox.add_child(progressOuter);
+
+        progressItem.add_child(progressBox);
 
         progressOuter.connect('notify::allocation', () => {
             if (progressOuter.mapped && progressOuter.get_allocation_box().get_width() > 0) {
                 const outerWidth = progressOuter.get_allocation_box().get_width();
+                const outerHeight = progressOuter.get_allocation_box().get_height();
                 const progressWidth = Math.round(outerWidth * used / total);
                 progressInner.width = Math.max(1, progressWidth);
+                labelBin.width = outerWidth;
+                labelBin.height = outerHeight;
             }
         });
 
