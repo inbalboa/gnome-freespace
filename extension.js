@@ -26,6 +26,7 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
             icon_name: 'drive-harddisk-symbolic',
             style_class: 'system-status-icon',
         });
+        this._icon.set_style('padding-right: 0px; padding-left: 0px;');
         this._label = new St.Label({
             text: '...',
             y_align: Clutter.ActorAlign.CENTER,
