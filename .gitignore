@@ -2,3 +2,7 @@ gschemas.compiled
 freespace@inbalboa.github.io.shell-extension.zip
 node_modules
 eslint.config.mjs
+biome.json
+bun.lock
+package-lock.json
+package.json
