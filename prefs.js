@@ -6,6 +6,8 @@ import GLib from 'gi://GLib';
 import * as Config from 'resource:///org/gnome/Shell/Extensions/js/misc/config.js';
 import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
+let LOG_PREFIX = '';
+
 const FreeSpacePrefsWidget = GObject.registerClass(class FreeSpacePrefsWidget extends Adw.PreferencesPage {
     _init(settings) {
         super._init({
@@ -141,7 +143,7 @@ const FreeSpacePrefsWidget = GObject.registerClass(class FreeSpacePrefsWidget ex
             const mountData = JSON.parse(new TextDecoder().decode(stdout));
             return mountData.filesystems.map(md => md.target);
         } catch (e) {
-            console.error('Error getting mount points:', e);
+            console.error(LOG_PREFIX, 'Error getting mount points:', e);
             return [];
         }
     }
@@ -210,6 +212,7 @@ const FreeSpacePrefsWidget = GObject.registerClass(class FreeSpacePrefsWidget ex
 
 export default class FreeSpacePreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
+        LOG_PREFIX = `[${this.metadata.uuid}]`;
         window.set_default_size(600, 650);
         window.set_size_request(500, 550);
 
@@ -323,4 +326,3 @@ export const FreeSpaceAboutPage = GObject.registerClass(class FreeSpaceAboutPage
         this.add(gnuSoftwareGroup);
     }
 });
-
