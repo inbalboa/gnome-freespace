@@ -16,6 +16,7 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
 
         this._settings = settings;
         this._timeoutId = null;
+        this._settingsChangedId = 0;
         this._visibleDisksInfo = [];
 
         // create the panel container
@@ -56,7 +57,7 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
         this._createMenu();
 
         // connect settings changes
-        this._settings.connect('changed', this._onSettingsChanged.bind(this));
+        this._settingsChangedId = this._settings.connect('changed', this._onSettingsChanged.bind(this));
 
         // start monitoring
         this._startMonitoring();
@@ -408,6 +409,10 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
 
     destroy() {
         this._stopMonitoring();
+        if (this._settingsChangedId) {
+            this._settings.disconnect(this._settingsChangedId);
+            this._settingsChangedId = 0;
+        }
         super.destroy();
     }
 });
