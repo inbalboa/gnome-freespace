@@ -12,7 +12,7 @@ import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/ex
 
 let LOG_PREFIX = '';
 
-const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extends PanelMenu.Button {
+const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button {
     _init(settings) {
         super._init(0.0, _('Free Space'));
 
@@ -95,7 +95,9 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
             x_align: Clutter.ActorAlign.END,
         });
 
-        refreshButton.connect('clicked', async () => { this._fullRefresh() });
+        refreshButton.connect('clicked', () => {
+            this._fullRefresh();
+        });
 
         headerBox.add_child(titleLabel);
         headerBox.add_child(refreshButton);
@@ -115,7 +117,6 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
             this._updateMenu();
         } catch (e) {
             console.error(LOG_PREFIX, 'Error refreshing disk info:', e);
-            throw e;
         }
     }
 
@@ -195,29 +196,24 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
             proc.init(null);
 
             const stdout = await new Promise((resolve, reject) => {
-                proc.communicate_utf8_async(null, null, (proc, result) => {
+                proc.communicate_utf8_async(null, null, (_proc, result) => {
                     try {
-                        const [, stdout] = proc.communicate_utf8_finish(result);
+                        const [, out] = proc.communicate_utf8_finish(result);
                         if (!proc.get_successful()) {
                             reject(new Error(`Process failed with exit code ${proc.get_exit_status()}`));
                             return;
                         }
-                        resolve(stdout);
+                        resolve(out);
                     } catch (e) {
                         reject(e);
                     }
                 });
             });
             const mountData = JSON.parse(stdout.trim());
-            const mountPoints = [];
-            for (const md of mountData.filesystems) {
-                const device = await this._getMountPointSourceDevice(md.target) || md.source;
-                mountPoints.push({
-                    path: md.target,
-                    device: device
-                });
-            }
-            return mountPoints;
+            return await Promise.all(mountData.filesystems.map(async md => ({
+                path: md.target,
+                device: await this._getMountPointSourceDevice(md.target) || md.source,
+            })));
         } catch (e) {
             console.error(LOG_PREFIX, 'Error getting mount points:', e);
             return [];
@@ -233,14 +229,14 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
             proc.init(null);
 
             const stdout = await new Promise((resolve, reject) => {
-                proc.communicate_utf8_async(null, null, (proc, result) => {
+                proc.communicate_utf8_async(null, null, (_proc, result) => {
                     try {
-                        const [, stdout] = proc.communicate_utf8_finish(result);
+                        const [, out] = proc.communicate_utf8_finish(result);
                         if (!proc.get_successful()) {
                             reject(new Error(`Process failed with exit code ${proc.get_exit_status()}`));
                             return;
                         }
-                        resolve(stdout);
+                        resolve(out);
                     } catch (e) {
                         reject(e);
                     }
@@ -318,9 +314,9 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
     _updateMenu() {
         this._layoutSection.removeAll();
 
-        if (!this._visibleDisksInfo || !Array.isArray(this._visibleDisksInfo)) {
+        if (!this._visibleDisksInfo || !Array.isArray(this._visibleDisksInfo))
             return;
-        }
+
 
         this._visibleDisksInfo.forEach((mp, i, mpa) => {
             const menuItem = new PopupMenu.PopupMenuItem('', {
@@ -338,7 +334,7 @@ const FreeSpaceIndicator = GObject.registerClass(class FreeSpaceIndicator extend
     }
 
     _makeProgressItem(used, total) {
-        const progressItem = new PopupMenu.PopupBaseMenuItem({ reactive: false });
+        const progressItem = new PopupMenu.PopupBaseMenuItem({reactive: false});
 
         const progressOuter = new St.Widget({
             style_class: 'freespace-progress-outer',

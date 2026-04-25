@@ -8,7 +8,9 @@ import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Ex
 
 let LOG_PREFIX = '';
 
-const FreeSpacePrefsWidget = GObject.registerClass(class FreeSpacePrefsWidget extends Adw.PreferencesPage {
+const FreeSpacePrefsWidget = GObject.registerClass({
+    GTypeName: 'FreeSpacePrefsWidget',
+}, class extends Adw.PreferencesPage {
     _init(settings) {
         super._init({
             title: _('Settings'),
@@ -225,7 +227,9 @@ export default class FreeSpacePreferences extends ExtensionPreferences {
 }
 
 
-export const FreeSpaceAboutPage = GObject.registerClass(class FreeSpaceAboutPage extends Adw.PreferencesPage {
+export const FreeSpaceAboutPage = GObject.registerClass({
+    GTypeName: 'FreeSpaceAboutPage',
+}, class extends Adw.PreferencesPage {
     _init(metadata) {
         super._init({
             title: _('About'),
