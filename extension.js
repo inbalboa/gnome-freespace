@@ -21,6 +21,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
         this._settingsChangedId = 0;
         this._refreshIntervalChangedId = 0;
         this._visibleDisksInfo = [];
+        this._cancellable = new Gio.Cancellable();
 
         // create the panel container
         this._hbox = new St.BoxLayout({
@@ -200,7 +201,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
             proc.init(null);
 
             const stdout = await new Promise((resolve, reject) => {
-                proc.communicate_utf8_async(null, null, (_proc, result) => {
+                proc.communicate_utf8_async(null, this._cancellable, (_proc, result) => {
                     try {
                         const [, out] = proc.communicate_utf8_finish(result);
                         if (!proc.get_successful()) {
@@ -386,6 +387,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
     }
 
     destroy() {
+        this._cancellable.cancel();
         this._stopMonitoring();
         if (this._settingsChangedId) {
             this._settings.disconnect(this._settingsChangedId);
