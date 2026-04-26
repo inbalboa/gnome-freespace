@@ -1,7 +1,7 @@
-import Gtk from 'gi://Gtk';
 import Adw from 'gi://Adw';
-import GObject from 'gi://GObject';
 import GLib from 'gi://GLib';
+import GObject from 'gi://GObject';
+import Gtk from 'gi://Gtk';
 
 import * as Config from 'resource:///org/gnome/Shell/Extensions/js/misc/config.js';
 import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
@@ -34,6 +34,14 @@ const FreeSpacePrefsWidget = GObject.registerClass({
         this._mainMountPointRow = new Adw.ComboRow({
             title: _('Main Mount Point'),
             subtitle: _('This will be shown in the top panel'),
+        });
+        this._mainMountPointRow.connect('notify::selected', () => {
+            const selected = this._mainMountPointRow.selected;
+            if (selected >= 0 && this._mountPoints[selected]) {
+                const newMp = this._mountPoints[selected];
+                if (newMp !== this._settings.get_string('main-mount-point'))
+                    this._settings.set_string('main-mount-point', newMp);
+            }
         });
         mainGroup.add(this._mainMountPointRow);
 
@@ -157,10 +165,8 @@ const FreeSpacePrefsWidget = GObject.registerClass({
     }
 
     _updateMainMountPointCombo() {
-        // Clear existing model
         this._mainMountPointRow.model = new Gtk.StringList();
 
-        // Add mount points to combo box
         const currentMain = this._settings.get_string('main-mount-point');
         let selectedIndex = 0;
         this._mountPoints.forEach((mp, index) => {
@@ -170,14 +176,6 @@ const FreeSpacePrefsWidget = GObject.registerClass({
         });
 
         this._mainMountPointRow.selected = selectedIndex;
-
-        // Connect selection change
-        this._mainMountPointRow.connect('notify::selected', () => {
-            if (this._mainMountPointRow.selected >= 0) {
-                const selectedMp = this._mountPoints[this._mainMountPointRow.selected];
-                this._settings.set_string('main-mount-point', selectedMp);
-            }
-        });
     }
 
     _updateHiddenMountPoints() {

@@ -273,8 +273,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
                 const isYMain = y.path === this._mainMountPoint;
                 if (isXMain === isYMain)
                     return 0;
-                else
-                    return isXMain ? -1 : 1;
+                return isXMain ? -1 : 1;
             });
 
         if (force || !this._visibleDisksInfo || this._visibleDisksInfo.length !== newVisibleDisksInfo.length) {
