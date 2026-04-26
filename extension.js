@@ -10,6 +10,9 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
+// avoids redrawing the menu on negligible used-space drift between refreshes
+const CHANGE_THRESHOLD_BYTES = 50_000_000;
+
 const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button {
     _init(settings, logPrefix) {
         super._init(0.0, _('Free Space'));
@@ -259,8 +262,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
 
         for (const [i, di] of newVisibleDisksInfo.entries()) {
             const exDi = this._visibleDisksInfo[i];
-            const changeThreshold = 100000000;
-            if (exDi.path !== di.path || Math.abs(exDi.used - di.used) > changeThreshold) {
+            if (exDi.path !== di.path || Math.abs(exDi.used - di.used) > CHANGE_THRESHOLD_BYTES) {
                 this._visibleDisksInfo = newVisibleDisksInfo;
                 return true;
             }
