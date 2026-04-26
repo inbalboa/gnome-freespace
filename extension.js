@@ -171,18 +171,20 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
 
     async _getAllDisksInfo() {
         const mountPoints = await this._getMountPoints();
-        return mountPoints.map(mountData => {
-            const diskInfo = this._getDiskInfo(mountData.path);
-            if (!diskInfo)
-                return {};
-            return {
-                path: mountData.path,
-                device: mountData.device,
-                total: diskInfo.total,
-                free: diskInfo.free,
-                used: diskInfo.used,
-            };
-        });
+        return mountPoints
+            .map(mountData => {
+                const diskInfo = this._getDiskInfo(mountData.path);
+                if (!diskInfo)
+                    return null;
+                return {
+                    path: mountData.path,
+                    device: mountData.device,
+                    total: diskInfo.total,
+                    free: diskInfo.free,
+                    used: diskInfo.used,
+                };
+            })
+            .filter(Boolean);
     }
 
     async _getMountPoints() {
