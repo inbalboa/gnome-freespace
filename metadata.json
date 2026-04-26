@@ -3,7 +3,7 @@
   "name": "Free Space Indicator",
   "description": "Shows disk free space in the top panel",
   "version": 1,
-  "version-name": "1.1.1",
+  "version-name": "1.2.0",
   "shell-version": ["48", "49", "50"],
   "url": "https://github.com/inbalboa/gnome-freespace",
   "settings-schema": "org.gnome.shell.extensions.freespace",
