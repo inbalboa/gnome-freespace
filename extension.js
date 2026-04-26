@@ -256,7 +256,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
                 return isXMain ? -1 : 1;
             });
 
-        if (force || !this._visibleDisksInfo || this._visibleDisksInfo.length !== newVisibleDisksInfo.length) {
+        if (force || this._visibleDisksInfo.length !== newVisibleDisksInfo.length) {
             this._visibleDisksInfo = newVisibleDisksInfo;
             return true;
         }
@@ -272,11 +272,6 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
     }
 
     _updateMainTitle() {
-        if (!this._visibleDisksInfo || !Array.isArray(this._visibleDisksInfo)) {
-            this._label.text = _('Loading...');
-            return;
-        }
-
         let mainDisk = this._visibleDisksInfo.find(di => di.path === this._mainMountPoint);
         if (!mainDisk && this._visibleDisksInfo.length > 0)
             mainDisk = this._visibleDisksInfo[0];
@@ -290,10 +285,6 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
     _updateMenu() {
         this._clearProgressSignals();
         this._layoutSection.removeAll();
-
-        if (!this._visibleDisksInfo || !Array.isArray(this._visibleDisksInfo))
-            return;
-
 
         this._visibleDisksInfo.forEach((mp, i, mpa) => {
             const menuItem = new PopupMenu.PopupMenuItem('', {
