@@ -39,24 +39,22 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
         // initial setting filling
         this._fillSettings();
 
-        // initial fill of disk info
-        this._refillVisibleDisksInfo(true).then(() => {
-            this._updateIndicatorDisplay();
-            this._updateMainTitle();
-            this._updateMenu();
-        }).catch(e => {
-            console.error(LOG_PREFIX, 'Error initializing disk info:', e);
-            this._visibleDisksInfo = [];
-            this._updateIndicatorDisplay();
-            this._updateMainTitle();
-            this._updateMenu();
-        });
-
         // set initial display mode
         this._updateIndicatorDisplay();
 
         // create popup menu
         this._createMenu();
+
+        // initial fill of disk info
+        this._refillVisibleDisksInfo(true).then(() => {
+            this._updateMainTitle();
+            this._updateMenu();
+        }).catch(e => {
+            console.error(LOG_PREFIX, 'Error initializing disk info:', e);
+            this._visibleDisksInfo = [];
+            this._updateMainTitle();
+            this._updateMenu();
+        });
 
         // connect settings changes
         this._settingsChangedId = this._settings.connect('changed', this._onSettingsChanged.bind(this));
