@@ -188,7 +188,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
     async _getMountPoints() {
         try {
             const proc = new Gio.Subprocess({
-                argv: ['findmnt', '--fstab', '--json', '--types=swap', '--invert', '--output=SOURCE,TARGET'],
+                argv: ['findmnt', '--real', '--json', '--output=SOURCE,TARGET'],
                 flags: Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE,
             });
             proc.init(null);
@@ -208,44 +208,13 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
                 });
             });
             const mountData = JSON.parse(stdout.trim());
-            return await Promise.all(mountData.filesystems.map(async md => ({
+            return mountData.filesystems.map(md => ({
                 path: md.target,
-                device: await this._getMountPointSourceDevice(md.target) || md.source,
-            })));
+                device: md.source,
+            }));
         } catch (e) {
             console.error(LOG_PREFIX, 'Error getting mount points:', e);
             return [];
-        }
-    }
-
-    async _getMountPointSourceDevice(mountPath) {
-        try {
-            const proc = new Gio.Subprocess({
-                argv: ['findmnt', '--json', '--output=SOURCE', '--', mountPath],
-                flags: Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE,
-            });
-            proc.init(null);
-
-            const stdout = await new Promise((resolve, reject) => {
-                proc.communicate_utf8_async(null, null, (_proc, result) => {
-                    try {
-                        const [, out] = proc.communicate_utf8_finish(result);
-                        if (!proc.get_successful()) {
-                            reject(new Error(`Process failed with exit code ${proc.get_exit_status()}`));
-                            return;
-                        }
-                        resolve(out);
-                    } catch (e) {
-                        reject(e);
-                    }
-                });
-            });
-            const mountData = JSON.parse(stdout.trim());
-            if (mountData.filesystems.length > 0)
-                return mountData.filesystems[0].source;
-        } catch (e) {
-            console.error(LOG_PREFIX, 'Error getting mount point source device:', e);
-            return null;
         }
     }
 

@@ -146,7 +146,7 @@ const FreeSpacePrefsWidget = GObject.registerClass({
 
     _getMountPoints() {
         try {
-            const [success, stdout] = GLib.spawn_command_line_sync('findmnt --fstab --json --types=swap --invert');
+            const [success, stdout] = GLib.spawn_command_line_sync('findmnt --real --json');
             if (!success)
                 return [];
 
