@@ -6,5 +6,6 @@
   "version-name": "1.1.1",
   "shell-version": ["48", "49", "50"],
   "url": "https://github.com/inbalboa/gnome-freespace",
-  "settings-schema": "org.gnome.shell.extensions.freespace"
+  "settings-schema": "org.gnome.shell.extensions.freespace",
+  "gettext-domain": "freespace@inbalboa.github.io"
 }

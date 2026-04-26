@@ -33,11 +33,25 @@ clean:
 build: clean
 	@printf "==> packaging...\n"
 	@gnome-extensions pack --force \
+	--podir=po \
 	--extra-source="LICENSE" \
 	--extra-source="icons"
+
+pot:
+	@printf "==> regenerating translation template...\n"
+	@xgettext --from-code=UTF-8 \
+		--keyword=_ \
+		--add-comments \
+		--package-name="`jq -r .name metadata.json`" \
+		--package-version="$(TAG)" \
+		--copyright-holder="Serhiy Shliapuhin" \
+		--msgid-bugs-address="https://github.com/inbalboa/gnome-freespace/issues" \
+		--output="po/$(UUID).pot" \
+		extension.js prefs.js
+	@sed -i 's/charset=CHARSET/charset=UTF-8/' "po/$(UUID).pot"
 
 release: check tag pub
 	@printf "\nPublished at %s\n\n" "`date`"
 
 .DEFAULT_GOAL := build
-.PHONY: check tag pub install uninstall reinstall clean build release
+.PHONY: check tag pub install uninstall reinstall clean build pot release
