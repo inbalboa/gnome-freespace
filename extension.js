@@ -375,8 +375,12 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
             if (progressOuter.mapped && progressOuter.get_allocation_box().get_width() > 0) {
                 const outerWidth = progressOuter.get_allocation_box().get_width();
                 const outerHeight = progressOuter.get_allocation_box().get_height();
-                const progressWidth = Math.round(outerWidth * used / total);
-                progressInner.width = Math.max(1, progressWidth);
+                if (total > 0) {
+                    const progressWidth = Math.round(outerWidth * used / total);
+                    progressInner.width = Math.max(1, progressWidth);
+                } else {
+                    progressInner.width = 0;
+                }
                 labelBin.width = outerWidth;
                 labelBin.height = outerHeight;
             }
