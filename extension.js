@@ -321,7 +321,9 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
                 reactive: false,
                 style_class: 'freespace-mountpoint-popup-menu-item',
             });
-            menuItem.label.clutter_text.set_markup(`${mp.device} on <b>${mp.path}</b>`);
+            const device = GLib.markup_escape_text(mp.device, -1);
+            const path = GLib.markup_escape_text(mp.path, -1);
+            menuItem.label.clutter_text.set_markup(`${device} on <b>${path}</b>`);
             this._layoutSection.addMenuItem(menuItem);
 
             this._layoutSection.addMenuItem(this._makeProgressItem(mp.used, mp.total));
