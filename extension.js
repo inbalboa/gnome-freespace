@@ -158,12 +158,12 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
     }
 
     _formatBytes(bytes, bi = true, condensed = false) {
-        if (bytes === 0)
+        if (bytes < 1)
             return condensed ? '0' : '0 B';
 
         const k = bi ? 1024 : 1000;
         const sizes = bi ? ['', 'Ki', 'Mi', 'Gi', 'Ti'] : ['', 'K', 'M', 'G', 'T'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        const i = Math.min(sizes.length - 1, Math.floor(Math.log(bytes) / Math.log(k)));
 
         const sizeFmt = condensed ? `${sizes[i]}` : ` ${sizes[i]}B`;
         return `${parseFloat((bytes / k ** i).toFixed(1))}${sizeFmt}`;
