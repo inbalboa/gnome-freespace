@@ -11,33 +11,23 @@
     width: 200px;
     height: 22px;
     border-radius: 8px;
-}
-
-.freespace-progress-outer {
     background-color: #3a3a3a;
 }
 
 .freespace-progress-inner {
     height: 22px;
     border-radius: 8px;
-}
-
-.freespace-progress-inner {
     background-color: #3584e4;
 }
 
 .freespace-progress-label {
     font-size: 12px;
-}
-
-.freespace-progress-label {
     color: #ffffff;
 }
 
 .freespace-refresh-button {
     padding: 4px 8px;
     border-radius: 4px;
-    transition: all 0.1s ease;
 }
 
 .freespace-refresh-button:hover {
@@ -46,5 +36,4 @@
 
 .freespace-refresh-button:active {
     background-color: rgba(255, 255, 255, 0.2);
-    transform: scale(0.9);
 }
