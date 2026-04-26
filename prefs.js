@@ -66,7 +66,7 @@ const FreeSpacePrefsWidget = GObject.registerClass({
             'label': 2,
         };
         const currentMode = this._settings.get_string('indicator-display-mode');
-        const selectedIndex = modesMap[currentMode] || 0;
+        const selectedIndex = modesMap[currentMode] ?? 0;
         indicatorDisplayRow.selected = selectedIndex;
         indicatorDisplayRow.connect('notify::selected', () => {
             if (indicatorDisplayRow.selected >= 0)
