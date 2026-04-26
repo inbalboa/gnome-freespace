@@ -228,10 +228,12 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
         try {
             const f = Gio.File.new_for_path(mountPoint);
             const info = f.query_filesystem_info('filesystem::*', null);
+            const total = info.get_attribute_uint64('filesystem::size');
+            const free = info.get_attribute_uint64('filesystem::free');
             return {
-                total: info.get_attribute_uint64('filesystem::size'),
-                free: info.get_attribute_uint64('filesystem::free'),
-                used: info.get_attribute_uint64('filesystem::size') - info.get_attribute_uint64('filesystem::free'),
+                total,
+                free,
+                used: total - free,
             };
         } catch (e) {
             console.error(LOG_PREFIX, 'Error getting disk space:', e);
