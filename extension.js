@@ -19,6 +19,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
         this._settings = settings;
         this._timeoutId = null;
         this._settingsChangedId = 0;
+        this._refreshIntervalChangedId = 0;
         this._visibleDisksInfo = [];
 
         // create the panel container
@@ -58,6 +59,10 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
 
         // connect settings changes
         this._settingsChangedId = this._settings.connect('changed', this._onSettingsChanged.bind(this));
+        this._refreshIntervalChangedId = this._settings.connect('changed::refresh-interval', () => {
+            this._refreshInterval = this._settings.get_int('refresh-interval');
+            this._startMonitoring();
+        });
 
         // start monitoring
         this._startMonitoring();
@@ -137,7 +142,6 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
             this._updateMainTitle();
             this._updateMenu();
         });
-        this._startMonitoring();
     }
 
     _updateIndicatorDisplay() {
@@ -384,6 +388,10 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
         if (this._settingsChangedId) {
             this._settings.disconnect(this._settingsChangedId);
             this._settingsChangedId = 0;
+        }
+        if (this._refreshIntervalChangedId) {
+            this._settings.disconnect(this._refreshIntervalChangedId);
+            this._refreshIntervalChangedId = 0;
         }
         super.destroy();
     }
