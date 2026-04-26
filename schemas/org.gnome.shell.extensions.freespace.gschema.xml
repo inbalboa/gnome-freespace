@@ -13,6 +13,7 @@
     </key>
     <key name="refresh-interval" type="i">
       <default>60</default>
+      <range min="5" max="86400"/>
       <summary>Refresh interval in seconds</summary>
       <description>How often to update disk space information</description>
     </key>
