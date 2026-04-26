@@ -1,3 +1,8 @@
+.system-status-icon.freespace-panel-icon {
+    padding-right: 0;
+    padding-left: 0;
+}
+
 .freespace-popup-subtitle-menu-item {
     color: inherit;
 }
