@@ -10,12 +10,11 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-let LOG_PREFIX = '';
-
 const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button {
-    _init(settings) {
+    _init(settings, logPrefix) {
         super._init(0.0, _('Free Space'));
 
+        this._logPrefix = logPrefix;
         this._settings = settings;
         this._timeoutId = null;
         this._settingsChangedId = 0;
@@ -51,7 +50,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
             this._updateMainTitle();
             this._updateMenu();
         }).catch(e => {
-            console.error(LOG_PREFIX, 'Error initializing disk info:', e);
+            console.error(this._logPrefix, 'Error initializing disk info:', e);
             this._visibleDisksInfo = [];
             this._updateMainTitle();
             this._updateMenu();
@@ -119,7 +118,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
             this._updateMainTitle();
             this._updateMenu();
         } catch (e) {
-            console.error(LOG_PREFIX, 'Error refreshing disk info:', e);
+            console.error(this._logPrefix, 'Error refreshing disk info:', e);
         }
     }
 
@@ -138,7 +137,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
             this._updateMainTitle();
             this._updateMenu();
         }).catch(e => {
-            console.error(LOG_PREFIX, 'Error refreshing disk info on settings change:', e);
+            console.error(this._logPrefix, 'Error refreshing disk info on settings change:', e);
             this._updateMainTitle();
             this._updateMenu();
         });
@@ -219,7 +218,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
                 device: md.source,
             }));
         } catch (e) {
-            console.error(LOG_PREFIX, 'Error getting mount points:', e);
+            console.error(this._logPrefix, 'Error getting mount points:', e);
             return [];
         }
     }
@@ -236,7 +235,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
                 used: total - free,
             };
         } catch (e) {
-            console.error(LOG_PREFIX, 'Error getting disk space:', e);
+            console.error(this._logPrefix, 'Error getting disk space:', e);
             return null;
         }
     }
@@ -373,7 +372,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
                     this._updateMainTitle();
                     this._updateMenu();
                 }
-            }).catch(e => console.error(LOG_PREFIX, 'Error during monitoring refresh:', e));
+            }).catch(e => console.error(this._logPrefix, 'Error during monitoring refresh:', e));
             return GLib.SOURCE_CONTINUE;
         });
     }
@@ -402,9 +401,8 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
 
 export default class FreeSpaceExtension extends Extension {
     enable() {
-        LOG_PREFIX = `[${this.uuid}]`;
         this._settings = this.getSettings();
-        this._indicator = new FreeSpaceIndicator(this._settings);
+        this._indicator = new FreeSpaceIndicator(this._settings, `[${this.uuid}]`);
         Main.panel.addToStatusArea(this.uuid, this._indicator);
     }
 

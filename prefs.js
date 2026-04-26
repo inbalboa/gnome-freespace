@@ -6,17 +6,16 @@ import Gtk from 'gi://Gtk';
 import * as Config from 'resource:///org/gnome/Shell/Extensions/js/misc/config.js';
 import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-let LOG_PREFIX = '';
-
 const FreeSpacePrefsWidget = GObject.registerClass({
     GTypeName: 'FreeSpacePrefsWidget',
 }, class extends Adw.PreferencesPage {
-    _init(settings) {
+    _init(settings, logPrefix) {
         super._init({
             title: _('Settings'),
             icon_name: 'settings-symbolic',
         });
 
+        this._logPrefix = logPrefix;
         this._settings = settings;
         this._mountPoints = [];
 
@@ -153,7 +152,7 @@ const FreeSpacePrefsWidget = GObject.registerClass({
             const mountData = JSON.parse(new TextDecoder().decode(stdout));
             return mountData.filesystems.map(md => md.target);
         } catch (e) {
-            console.error(LOG_PREFIX, 'Error getting mount points:', e);
+            console.error(this._logPrefix, 'Error getting mount points:', e);
             return [];
         }
     }
@@ -214,11 +213,10 @@ const FreeSpacePrefsWidget = GObject.registerClass({
 
 export default class FreeSpacePreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
-        LOG_PREFIX = `[${this.metadata.uuid}]`;
         window.set_default_size(600, 650);
         window.set_size_request(500, 550);
 
-        const prefsPage = new FreeSpacePrefsWidget(this.getSettings());
+        const prefsPage = new FreeSpacePrefsWidget(this.getSettings(), `[${this.metadata.uuid}]`);
         window.add(prefsPage);
 
         const aboutPage = new FreeSpaceAboutPage(this.metadata);
