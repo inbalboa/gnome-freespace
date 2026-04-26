@@ -23,6 +23,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
         this._settingsChangedId = 0;
         this._refreshIntervalChangedId = 0;
         this._visibleDisksInfo = [];
+        this._progressSignals = [];
         this._cancellable = new Gio.Cancellable();
 
         // create the panel container
@@ -287,6 +288,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
     }
 
     _updateMenu() {
+        this._clearProgressSignals();
         this._layoutSection.removeAll();
 
         if (!this._visibleDisksInfo || !Array.isArray(this._visibleDisksInfo))
@@ -348,7 +350,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
 
         progressItem.add_child(progressBox);
 
-        progressOuter.connect('notify::allocation', () => {
+        const sigId = progressOuter.connect('notify::allocation', () => {
             if (progressOuter.mapped && progressOuter.get_allocation_box().get_width() > 0) {
                 const outerWidth = progressOuter.get_allocation_box().get_width();
                 const outerHeight = progressOuter.get_allocation_box().get_height();
@@ -362,8 +364,15 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
                 labelBin.height = outerHeight;
             }
         });
+        this._progressSignals.push({actor: progressOuter, id: sigId});
 
         return progressItem;
+    }
+
+    _clearProgressSignals() {
+        for (const {actor, id} of this._progressSignals)
+            actor.disconnect(id);
+        this._progressSignals.length = 0;
     }
 
     _startMonitoring() {
@@ -388,6 +397,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
 
     destroy() {
         this._cancellable.cancel();
+        this._clearProgressSignals();
         this._stopMonitoring();
         if (this._settingsChangedId) {
             this._settings.disconnect(this._settingsChangedId);
