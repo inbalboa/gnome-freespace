@@ -164,15 +164,10 @@ const FreeSpacePrefsWidget = GObject.registerClass({
     }
 
     _updateMainMountPointCombo() {
-        this._mainMountPointRow.model = new Gtk.StringList();
+        this._mainMountPointRow.model = Gtk.StringList.new(this._mountPoints);
 
         const currentMain = this._settings.get_string('main-mount-point');
-        let selectedIndex = -1;
-        this._mountPoints.forEach((mp, index) => {
-            this._mainMountPointRow.model.append(mp);
-            if (mp === currentMain)
-                selectedIndex = index;
-        });
+        const selectedIndex = this._mountPoints.indexOf(currentMain);
 
         this._mainMountPointRow.selected = selectedIndex >= 0
             ? selectedIndex
