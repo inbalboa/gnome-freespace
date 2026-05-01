@@ -28,7 +28,7 @@ A GNOME Shell extension that displays disk free space information in the top pan
 
 ### From GNOME Extensions
 
-https://extensions.gnome.org/extension/8277/screen-brightness-governor/
+https://extensions.gnome.org/extension/8383/free-space-indicator/
 
 ### Manual Installation
 
