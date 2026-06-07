@@ -32,5 +32,10 @@
       <summary>Indicator display mode</summary>
       <description>How to display the indicator: "icon" (only icon), "label" (only label), or "both" (icon and label)</description>
     </key>
+    <key name="show-disk-labels" type="b">
+      <default>false</default>
+      <summary>Show filesystem labels instead of device paths</summary>
+      <description>If true, show filesystem labels in the popup menu when available. Falls back to the device path when no label is set.</description>
+    </key>
   </schema>
 </schemalist> 

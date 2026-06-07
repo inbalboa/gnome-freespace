@@ -132,6 +132,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
         this._useBinaryUnits = this._settings.get_boolean('use-binary-units');
         this._displayMode = this._settings.get_string('indicator-display-mode');
         this._refreshInterval = this._settings.get_int('refresh-interval');
+        this._showDiskLabels = this._settings.get_boolean('show-disk-labels');
     }
 
     _onSettingsChanged() {
@@ -186,6 +187,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
                 return {
                     path: mountData.path,
                     device: mountData.device,
+                    label: mountData.label,
                     total: diskInfo.total,
                     free: diskInfo.free,
                     used: diskInfo.used,
@@ -197,7 +199,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
     async _getMountPoints() {
         try {
             const proc = new Gio.Subprocess({
-                argv: ['findmnt', '--real', '--json', '--output=SOURCE,TARGET'],
+                argv: ['findmnt', '--real', '--json', '--output=SOURCE,TARGET,LABEL'],
                 flags: Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE,
             });
             proc.init(null);
@@ -220,6 +222,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
             return mountData.filesystems.map(md => ({
                 path: md.target,
                 device: md.source,
+                label: md.label ?? '',
             }));
         } catch (e) {
             console.error(this._logPrefix, 'Error getting mount points:', e);
@@ -291,9 +294,11 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
                 reactive: false,
                 style_class: 'freespace-mountpoint-popup-menu-item',
             });
-            const device = GLib.markup_escape_text(mp.device, -1);
+            const source = this._showDiskLabels && mp.label
+                ? GLib.markup_escape_text(mp.label, -1)
+                : GLib.markup_escape_text(mp.device, -1);
             const path = GLib.markup_escape_text(mp.path, -1);
-            menuItem.label.clutter_text.set_markup(`${device} on <b>${path}</b>`);
+            menuItem.label.clutter_text.set_markup(`${source} on <b>${path}</b>`);
             this._layoutSection.addMenuItem(menuItem);
 
             this._layoutSection.addMenuItem(this._makeProgressItem(mp.used, mp.total));

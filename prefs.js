@@ -83,6 +83,15 @@ const FreeSpacePrefsWidget = GObject.registerClass({
         binaryUnitsRow.connect('notify::active', () => this._settings.set_boolean('use-binary-units', binaryUnitsRow.active));
         mainGroup.add(binaryUnitsRow);
 
+        // disk labels
+        const showLabelsRow = new Adw.SwitchRow({
+            title: _('Show Disk Labels'),
+            subtitle: _('Show filesystem labels instead of device paths (when available)'),
+        });
+        showLabelsRow.active = this._settings.get_boolean('show-disk-labels');
+        showLabelsRow.connect('notify::active', () => this._settings.set_boolean('show-disk-labels', showLabelsRow.active));
+        mainGroup.add(showLabelsRow);
+
         // auto-refresh
         const intervalRow = new Adw.SpinRow({
             title: _('Refresh Interval'),
