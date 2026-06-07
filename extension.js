@@ -298,7 +298,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
                 ? GLib.markup_escape_text(mp.label, -1)
                 : GLib.markup_escape_text(mp.device, -1);
             const path = GLib.markup_escape_text(mp.path, -1);
-            menuItem.label.clutter_text.set_markup(`${source} on <b>${path}</b>`);
+            menuItem.label.clutter_text.set_markup(`<b>${source}</b> on <b>${path}</b>`);
             this._layoutSection.addMenuItem(menuItem);
 
             this._layoutSection.addMenuItem(this._makeProgressItem(mp.used, mp.total));
