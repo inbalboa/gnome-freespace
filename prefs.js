@@ -6,6 +6,8 @@ import Gtk from 'gi://Gtk';
 import * as Config from 'resource:///org/gnome/Shell/Extensions/js/misc/config.js';
 import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
+const SUBVOLUME_FSTYPES = new Set(['btrfs', 'bcachefs']);
+
 const FreeSpacePrefsWidget = GObject.registerClass({
     GTypeName: 'FreeSpacePrefsWidget',
 }, class extends Adw.PreferencesPage {
@@ -154,16 +156,24 @@ const FreeSpacePrefsWidget = GObject.registerClass({
 
     _getMountPoints() {
         try {
-            const [success, stdout] = GLib.spawn_command_line_sync('findmnt --real --json');
+            const [success, stdout] = GLib.spawn_command_line_sync(
+                'findmnt --real --list --json --nofsroot --types=nosquashfs,noerofs --output=SOURCE,TARGET,FSTYPE,FSROOT');
             if (!success)
                 return [];
 
             const mountData = JSON.parse(new TextDecoder().decode(stdout));
-            return mountData.filesystems.map(md => md.target);
+            return this._dropBindMounts(mountData.filesystems).map(md => md.target);
         } catch (e) {
             console.error(this._logPrefix, 'Error getting mount points:', e);
             return [];
         }
+    }
+
+    _dropBindMounts(mounts) {
+        const wholeFsDevices = new Set(mounts.filter(md => md.fsroot === '/').map(md => md.source));
+        return mounts.filter(md => md.fsroot === '/'
+            || SUBVOLUME_FSTYPES.has(md.fstype)
+            || !wholeFsDevices.has(md.source));
     }
 
     _loadMountPoints() {

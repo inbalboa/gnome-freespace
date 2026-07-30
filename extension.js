@@ -13,6 +13,9 @@ import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/ex
 // avoids redrawing the menu on negligible used-space drift between refreshes
 const CHANGE_THRESHOLD_BYTES = 50_000_000;
 
+// filesystems that mount a subvolume rather than the whole device, so their fsroot is not the root one
+const SUBVOLUME_FSTYPES = new Set(['btrfs', 'bcachefs']);
+
 const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button {
     _init(settings, logPrefix) {
         super._init(0.0, _('Free Space'));
@@ -199,7 +202,11 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
     async _getMountPoints() {
         try {
             const proc = new Gio.Subprocess({
-                argv: ['findmnt', '--real', '--json', '--output=SOURCE,TARGET,LABEL'],
+                argv: [
+                    'findmnt', '--real', '--list', '--json', '--nofsroot',
+                    '--types=nosquashfs,noerofs',
+                    '--output=SOURCE,TARGET,FSTYPE,FSROOT,LABEL',
+                ],
                 flags: Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE,
             });
             proc.init(null);
@@ -219,7 +226,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
                 });
             });
             const mountData = JSON.parse(stdout.trim());
-            return mountData.filesystems.map(md => ({
+            return this._dropBindMounts(mountData.filesystems).map(md => ({
                 path: md.target,
                 device: md.source,
                 label: md.label ?? '',
@@ -228,6 +235,13 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
             console.error(this._logPrefix, 'Error getting mount points:', e);
             return [];
         }
+    }
+
+    _dropBindMounts(mounts) {
+        const wholeFsDevices = new Set(mounts.filter(md => md.fsroot === '/').map(md => md.source));
+        return mounts.filter(md => md.fsroot === '/'
+            || SUBVOLUME_FSTYPES.has(md.fstype)
+            || !wholeFsDevices.has(md.source));
     }
 
     _getDiskInfo(mountPoint) {
