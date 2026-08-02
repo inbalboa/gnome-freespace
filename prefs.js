@@ -171,9 +171,9 @@ const FreeSpacePrefsWidget = GObject.registerClass({
 
     _dropBindMounts(mounts) {
         const wholeFsDevices = new Set(mounts.filter(md => md.fsroot === '/').map(md => md.source));
-        return mounts.filter(md => md.fsroot === '/'
-            || SUBVOLUME_FSTYPES.has(md.fstype)
-            || !wholeFsDevices.has(md.source));
+        return mounts.filter(md => md.fsroot === '/' ||
+            SUBVOLUME_FSTYPES.has(md.fstype) ||
+            !wholeFsDevices.has(md.source));
     }
 
     _loadMountPoints() {
