@@ -18,7 +18,7 @@ const SUBVOLUME_FSTYPES = new Set(['btrfs', 'bcachefs']);
 
 const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button {
     _init(settings, logPrefix) {
-        super._init(0.0, _('Free Space'));
+        super._init(0.5, _('Free Space'));
 
         this._logPrefix = logPrefix;
         this._settings = settings;
