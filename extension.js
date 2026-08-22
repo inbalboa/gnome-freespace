@@ -13,6 +13,9 @@ import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/ex
 // avoids redrawing the menu on negligible used-space drift between refreshes
 const CHANGE_THRESHOLD_BYTES = 50_000_000;
 
+const USAGE_WARNING_RATIO = 0.85;
+const USAGE_CRITICAL_RATIO = 0.95;
+
 // filesystems that mount a subvolume rather than the whole device, so their fsroot is not the root one
 const SUBVOLUME_FSTYPES = new Set(['btrfs', 'bcachefs']);
 
@@ -88,7 +91,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
         });
 
         const titleLabel = new St.Label({
-            text: _('Disk Space Usage'),
+            text: _('Free Space'),
             style_class: 'freespace-popup-subtitle-menu-item',
             y_align: Clutter.ActorAlign.CENTER,
             x_expand: true,
@@ -304,27 +307,40 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
         this._layoutSection.removeAll();
 
         this._visibleDisksInfo.forEach((mp, i, mpa) => {
-            const menuItem = new PopupMenu.PopupMenuItem('', {
-                reactive: false,
-                style_class: 'freespace-mountpoint-popup-menu-item',
-            });
-            const source = this._showDiskLabels && mp.label
-                ? GLib.markup_escape_text(mp.label, -1)
-                : GLib.markup_escape_text(mp.device, -1);
-            const path = GLib.markup_escape_text(mp.path, -1);
-            menuItem.label.clutter_text.set_markup(`<b>${source}</b> on <b>${path}</b>`);
-            this._layoutSection.addMenuItem(menuItem);
-
-            this._layoutSection.addMenuItem(this._makeProgressItem(mp.used, mp.total));
-
+            this._layoutSection.addMenuItem(this._makeDiskItem(mp));
             if (i < (mpa.length - 1))
                 this._layoutSection.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         });
     }
 
-    _makeProgressItem(used, total) {
-        const progressItem = new PopupMenu.PopupBaseMenuItem({reactive: false});
+    _makeDiskItem(mp) {
+        const diskItem = new PopupMenu.PopupBaseMenuItem({
+            reactive: false,
+            can_focus: false,
+            style_class: 'freespace-mountpoint-popup-menu-item',
+        });
 
+        const diskBox = new St.BoxLayout({
+            vertical: true,
+            x_expand: true,
+            style_class: 'freespace-disk-box',
+        });
+
+        const source = this._showDiskLabels && mp.label
+            ? GLib.markup_escape_text(mp.label, -1)
+            : GLib.markup_escape_text(mp.device, -1);
+        const path = GLib.markup_escape_text(mp.path, -1);
+        const titleLabel = new St.Label({x_expand: true});
+        titleLabel.clutter_text.set_markup(`<b>${source}</b> on <b>${path}</b>`);
+
+        diskBox.add_child(titleLabel);
+        diskBox.add_child(this._makeProgressBar(mp));
+        diskItem.add_child(diskBox);
+
+        return diskItem;
+    }
+
+    _makeProgressBar({used, free, total}) {
         const progressOuter = new St.Widget({
             style_class: 'freespace-progress-outer',
             x_expand: true,
@@ -332,16 +348,16 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
         });
 
         const progressInner = new St.Widget({
-            style_class: 'freespace-progress-inner',
+            style_class: this._fillStyleClass(used, total),
             x_align: Clutter.ActorAlign.START,
             y_align: Clutter.ActorAlign.CENTER,
         });
         progressOuter.add_child(progressInner);
 
-        const usedFmt = this._formatBytes(used, this._useBinaryUnits, false);
+        const freeFmt = this._formatBytes(free, this._useBinaryUnits, false);
         const totalFmt = this._formatBytes(total, this._useBinaryUnits, false);
         const progressLabel = new St.Label({
-            text: `${usedFmt} / ${totalFmt}`,
+            text: _('%s free of %s').format(freeFmt, totalFmt),
             style_class: 'freespace-progress-label',
         });
         const labelBin = new St.Bin({
@@ -357,8 +373,6 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
             y_expand: true,
         });
         progressBox.add_child(progressOuter);
-
-        progressItem.add_child(progressBox);
 
         const sigId = progressOuter.connect('notify::allocation', () => {
             if (progressOuter.mapped && progressOuter.get_allocation_box().get_width() > 0) {
@@ -376,7 +390,16 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
         });
         this._progressSignals.push({actor: progressOuter, id: sigId});
 
-        return progressItem;
+        return progressBox;
+    }
+
+    _fillStyleClass(used, total) {
+        const usageRatio = total > 0 ? used / total : 0;
+        if (usageRatio >= USAGE_CRITICAL_RATIO)
+            return 'freespace-progress-inner freespace-progress-inner-critical';
+        if (usageRatio >= USAGE_WARNING_RATIO)
+            return 'freespace-progress-inner freespace-progress-inner-warning';
+        return 'freespace-progress-inner';
     }
 
     _clearProgressSignals() {
