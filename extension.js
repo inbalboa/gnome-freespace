@@ -86,7 +86,6 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
         });
 
         const headerBox = new St.BoxLayout({
-            vertical: false,
             x_expand: true,
         });
 
@@ -321,7 +320,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
         });
 
         const diskBox = new St.BoxLayout({
-            vertical: true,
+            orientation: Clutter.Orientation.VERTICAL,
             x_expand: true,
             style_class: 'freespace-disk-box',
         });
@@ -368,7 +367,6 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
         progressOuter.add_child(labelBin);
 
         const progressBox = new St.BoxLayout({
-            vertical: false,
             x_expand: true,
             y_expand: true,
         });
