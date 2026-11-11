@@ -1,4 +1,5 @@
 # Free Space Indicator — GNOME Shell Extension
+
 [<img src="https://raw.githubusercontent.com/andyholmes/gnome-shell-extensions-badge/master/get-it-on-ego.svg?sanitize=true" height="100">](https://extensions.gnome.org/extension/8383/free-space-indicator/)
 
 [![GNOME Shell](https://img.shields.io/badge/GNOME%20Shell-48+-blue.svg)](https://gitlab.gnome.org/GNOME/gnome-shell)
@@ -13,7 +14,7 @@ A GNOME Shell extension that displays disk free space information in the top pan
 - Shows free space for your main mount point in the top panel
 - Click to view disk usage for all visible mount points
 - Choose between icon only, text only, or both in the panel
-- Configuration: 
+- Configuration:
   - Select which mount point to display as primary
   - Hide unwanted mount points from the popup menu
   - Toggle between binary (KiB, MiB, GiB) and decimal (KB, MB, GB) units
@@ -28,7 +29,7 @@ A GNOME Shell extension that displays disk free space information in the top pan
 
 ### From GNOME Extensions
 
-https://extensions.gnome.org/extension/8383/free-space-indicator/
+<https://extensions.gnome.org/extension/8383/free-space-indicator/>
 
 ### Manual Installation
 
@@ -39,6 +40,7 @@ https://extensions.gnome.org/extension/8383/free-space-indicator/
    cd gnome-freespace
    make install
    ```
+
    Requires `git`, `make`, `jq`
 
 2. **Restart GNOME Shell**
@@ -46,6 +48,7 @@ https://extensions.gnome.org/extension/8383/free-space-indicator/
    Log out and log back in.
 
 3. **Enable the extension**
+
    ```sh
    gnome-extensions enable freespace@inbalboa.github.io
    ```
