@@ -55,6 +55,13 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
         // create popup menu
         this._createMenu();
 
+        // 'shell-color-scheme' exists on some (patched) shells
+        this._updateStyleVariant();
+        St.Settings.get().connectObject(
+            'notify::color-scheme', () => this._updateStyleVariant(),
+            'notify::shell-color-scheme', () => this._updateStyleVariant(),
+            this);
+
         // initial fill of disk info
         this._refillVisibleDisksInfo(true).then(() => {
             this._updateMainTitle();
@@ -119,6 +126,13 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
 
         this._layoutSection = new PopupMenu.PopupMenuSection();
         this.menu.addMenuItem(this._layoutSection);
+    }
+
+    _updateStyleVariant() {
+        if (Main.getStyleVariant() === 'light')
+            this.menu.box.add_style_class_name('freespace-light');
+        else
+            this.menu.box.remove_style_class_name('freespace-light');
     }
 
     async _fullRefresh() {
@@ -438,6 +452,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
             this._settings.disconnect(this._refreshIntervalChangedId);
             this._refreshIntervalChangedId = 0;
         }
+        St.Settings.get().disconnectObject(this);
         super.destroy();
     }
 });

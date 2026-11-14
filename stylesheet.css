@@ -53,3 +53,34 @@
 .freespace-refresh-button:active {
     background-color: rgba(255, 255, 255, 0.2);
 }
+
+/* light style overrides; the shell does not always reload extension variant stylesheets on theme switch,
+   so the indicator toggles this class on its menu itself */
+
+.freespace-light .freespace-progress-outer {
+    background-color: #e0e0e0;
+}
+
+.freespace-light .freespace-progress-inner {
+    background-color: #1a73e8;
+}
+
+.freespace-light .freespace-progress-inner-warning {
+    background-color: #ff7800;
+}
+
+.freespace-light .freespace-progress-inner-critical {
+    background-color: #e01b24;
+}
+
+.freespace-light .freespace-progress-label {
+    color: #000000;
+}
+
+.freespace-light .freespace-refresh-button:hover {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+.freespace-light .freespace-refresh-button:active {
+    background-color: rgba(0, 0, 0, 0.15);
+}
