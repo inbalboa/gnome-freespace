@@ -26,8 +26,6 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
         this._logPrefix = logPrefix;
         this._settings = settings;
         this._timeoutId = null;
-        this._settingsChangedId = 0;
-        this._refreshIntervalChangedId = 0;
         this._visibleDisksInfo = [];
         this._progressSignals = [];
         this._cancellable = new Gio.Cancellable();
@@ -74,11 +72,13 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
         });
 
         // connect settings changes
-        this._settingsChangedId = this._settings.connect('changed', this._onSettingsChanged.bind(this));
-        this._refreshIntervalChangedId = this._settings.connect('changed::refresh-interval', () => {
-            this._refreshInterval = this._settings.get_int('refresh-interval');
-            this._startMonitoring();
-        });
+        this._settings.connectObject(
+            'changed', this._onSettingsChanged.bind(this),
+            'changed::refresh-interval', () => {
+                this._refreshInterval = this._settings.get_int('refresh-interval');
+                this._startMonitoring();
+            },
+            this);
 
         // start monitoring
         this._startMonitoring();
@@ -444,14 +444,7 @@ const FreeSpaceIndicator = GObject.registerClass(class extends PanelMenu.Button 
         this._cancellable.cancel();
         this._clearProgressSignals();
         this._stopMonitoring();
-        if (this._settingsChangedId) {
-            this._settings.disconnect(this._settingsChangedId);
-            this._settingsChangedId = 0;
-        }
-        if (this._refreshIntervalChangedId) {
-            this._settings.disconnect(this._refreshIntervalChangedId);
-            this._refreshIntervalChangedId = 0;
-        }
+        this._settings.disconnectObject(this);
         St.Settings.get().disconnectObject(this);
         super.destroy();
     }
